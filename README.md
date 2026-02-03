@@ -12,11 +12,9 @@ This project is related with Bachelor's thesis (in Polish language). Check it [h
 > In next commits, I will simplify the code and add comments in the code for better understanding.
 
 ## 📁 Project Structure
----
 
 ```
 └── 📁Software
-    ├── 📁.vscode       # VS Code related settings.
     ├── 📁dev_server    # Test implementation of HTTP Server (localhost).
     └── 📁upload        # Files loaded directly into microcontroller.
         ├── 📁app           # Main logic of application.
@@ -28,12 +26,10 @@ This project is related with Bachelor's thesis (in Polish language). Check it [h
         ├── boot.py 
         ├── main.py
     ├── README.md       # This file.
-    ├── upload_cache.json
     └── upload.py       # Helper script for loading files into microcontroller.
 ```
 
 ## 🛠️ Technologies
----
 
 - Microcontroller: [ESP32-WROOM-32D]()
 - Language: [MicroPython v1.25.0 (2025-04-15)](https://micropython.org/download/ESP32_GENERIC/) for ESP32/WROOM modules
@@ -41,7 +37,7 @@ This project is related with Bachelor's thesis (in Polish language). Check it [h
 - User interface: HTML/CSS/JS web page
 
 ## ✨ Features
----
+
 Base:
 - automatic watering three plants based on their moisture level using solenoid valves and single water pump,
 - power of the water pump regulated by PWM,
@@ -60,7 +56,6 @@ Tests/implementation process:
 - time multiplier simulation for algorithm functionality tests
 
 ## 🌐 Features from web interface
----
 
 - displays device status
 - watering with a set period of time,
@@ -70,7 +65,6 @@ Tests/implementation process:
 - connecting with new network
 
 ## 💧 Watering logic
----
 
 The `WateringController` class acts as the main coordinator for the watering system, managing multiple watering locations (`PlantPlace` objects) and shared components (water pump, DHT11 sensor, water level sensor).
 
@@ -92,10 +86,11 @@ Water pump power regulation:
 - 0 open valves → power set to 0%,
 - 1 open valve → power set to `pwm_max⚙`,
 - \>1 open valves → power set proportional to number of watering locations:
- $$\frac{pwm_{\mathrm{max}}}{N_{\mathrm{places}}}~\cdot~N_{\mathrm{open}} \cdot 100~\%$$
+
+$$\frac{pwm_{\mathrm{max}}}{N_{\mathrm{places}}}~\cdot~N_{\mathrm{open}} \cdot 100~\%$$
 
 ## 🤖 Automatic watering decision and duration logic
----
+
 Each watering location (`PlantPlace` object) operates as a finite state machine with the following states:
 - **IDLE** → periodic soil humidity measurement,
 - **MEASURING** → humidity evaluation and watering need assessment,
@@ -111,13 +106,14 @@ Watering decision is triggered when measured humidity falls below threshold:
 Watering duration is calculated using:
 - **Initial watering**: `min_watering_time⚙` (safe starting point),
 - **Subsequent watering**: previous duration + proportional correction:
-  $$\Delta t = k \cdot (H_{\mathrm{target}} - H_{\mathrm{current}})$$
-  > [!NOTE] 
-  > where $k$ is proportional gain, 
-  > final value is clamped between `min_watering_time⚙` and `max_watering_time⚙`.
+
+$$\Delta t = k \cdot (H_{\mathrm{target}} - H_{\mathrm{current}})$$
+  
+> [!NOTE] 
+> where $k$ is proportional gain, 
+> final value is clamped between `min_watering_time⚙` and `max_watering_time⚙`.
 
 ## ⚙️ Core configuration (`core.json`)
----
 
 Basic device configuration for network connectivity.
 
@@ -129,7 +125,6 @@ Basic device configuration for network connectivity.
 | `sta_pass` | -- | STA network password |
 
 ## ⚙️ LED regulation configuration (`light.json`)
----
 
 Configuration for the `LEDController` component.
 
@@ -140,7 +135,6 @@ Configuration for the `LEDController` component.
 | `avg_count` | 15 | Number of measurements to average |
 
 ## ⚙️ Watering configuration (`water.json`)
----
 
 Configuration for the `WateringController` component.
 
@@ -156,7 +150,6 @@ Configuration for the `WateringController` component.
 | `signal_check_interval` | 2000 | Interval for checking watering signals from PlantPlace class (ms) |
 
 ## ⚙️ General device configuration (`device.json`)
----
 
 Configuration for the `DeviceController` component.
 
@@ -172,7 +165,6 @@ Configuration for the `DeviceController` component.
 | `schedule_interval` | 5000 | Schedule check interval (ms) |
 
 ## ⚙️ Watering locations configuration (`places.json`)
----
 
 Configuration for individual `PlantPlace` instances (example for `place1` section).
 
@@ -198,30 +190,26 @@ Configuration for individual `PlantPlace` instances (example for `place1` sectio
 > - The `places.json` file can contain multiple plant place configurations (place1, place2, etc.)
 
 ## 🏗️ Architecture 
----
 
 
 ## 📸 Images
----
-
-
 
 
 ## ⬆️ Uploading files
----
 
 To upload code to the ESP32 microcontroller, make sure that the appropriate MicroPython firmware is installed. For this purpose, please refer to the official [instruction](https://micropython.org/download/ESP32_GENERIC/).
 
 To simplify uploading files to the ESP32, a dedicated script `upload.py` was created. This script uploads all files from `upload` directory. To run the script, you need to install [Python](https://www.python.org/downloads/) and the [mpremote](https://pypi.org/project/mpremote/) tool. You can run this with the following flags:
+
 ```
 python upload.py update   # updates existing files on the ESP32.
  python upload.py full     # deletes all files and uploads them again from scratch.
 ```
+
 > [!NOTE]  
 > if you change the file structure (adding a new directory or moving a file) it is recommended to first run the script with the `full` flag.*
 
 ## 🙏 Credits
----
 
 This project is based in part on:
 - Logging implementation: [ESPlog](https://github.com/armanghobadi/ESPlog/tree/main) by armanghobadi, **MIT**.
@@ -230,16 +218,13 @@ This project is based in part on:
 - HTTP server implementation: [K-ESP-CTRL](https://github.com/Kuszki/K-ESP-CTRL) by Kuszki, **GPL-3.0-only**.
 
 ## 👥 Authors
----
 
-- Tomasz Wojtasek, github: [Zogir01](https://github.com/Zogir01): 
+- Tomasz Wojtasek, github: [Zogir01](https://github.com/Zogir01):<br>
     → software implementation (this repo)
-- Paweł Kurek, github: [PANP4W3L](https://github.com/PANP4W3L):
+- Paweł Kurek, github: [PANP4W3L](https://github.com/PANP4W3L):<br>
     → hardware implementation ([check here]())
-    → LED regulation logic (`LightController` class)
 
 ## 📜 License
----
 
 This project is licensed under the **GNU General Public License v3.0**.
 See the [LICENSE](LICENSE) file for full details.
