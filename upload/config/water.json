@@ -1,0 +1,10 @@
+{
+    "mode"                      : 2,
+    "pwm_min"                   : 20,
+    "pwm_max"                   : 80,
+    "max_valves"                : 1,
+    "pump_cooldown"             : 5000,
+    "amb_temp_thresh"           : 35,
+    "dht_interval"              : 200000,
+    "signal_check_interval"     : 2000
+}

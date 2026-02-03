@@ -1,0 +1,8 @@
+{
+    "wifi" : {
+        "ap_ssid" : "PlantAssist",
+        "ap_pass" : "12345678",
+        "sta_ssid" : "Maciek",
+        "sta_pass" : "Ge12gh39!12a"
+    }
+}

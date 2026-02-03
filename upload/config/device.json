@@ -1,0 +1,12 @@
+{
+    "enable_telemetry"        : false,
+    "telemetry_interval"      : 10,
+    
+    "enable_energy_save_mode" : false,
+    "min_dsleep_time"      : 600000,
+    
+    "enable_work_schedule"    : false,
+    "work_schedule_from"      : "08:00",
+    "work_schedule_to"        : "22:00",
+    "schedule_interval"    : 5000
+}

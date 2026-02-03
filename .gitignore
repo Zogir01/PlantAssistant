@@ -1,0 +1,10 @@
+/dev_server/db.sqlite3
+/db.sqlite3
+/dev_server/dev_server/__pycache__
+
+/!temp
+/typings
+/.vscode
+/upload_full.bat
+/upload_update.bat
+/upload_cache.json

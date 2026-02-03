@@ -1,0 +1,5 @@
+{
+    "enabled"   : true,
+    "threshold" : 50,
+    "avg_count" : 15
+}

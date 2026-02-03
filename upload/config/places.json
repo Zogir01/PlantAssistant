@@ -1,0 +1,44 @@
+{
+    "place1": {
+        "enabled": false,
+        "hum_threshold": 30,
+        "hum_target": 70,
+        "min_watering_time": 1000,
+        "max_watering_time": 10000,
+        "post_watering_delay": 600000,
+        "wait_for_valve_time": 300000,
+        "measurement_interval": 1800000,
+        "min_adc": 1200,
+        "max_adc": 3050,
+        "sample_count": 25,
+        "sample_interval": 5
+    },
+    "place2": {
+        "enabled": false,
+        "hum_threshold": 30,
+        "hum_target": 70,
+        "min_watering_time": 1000,
+        "max_watering_time": 10000,
+        "post_watering_delay": 600000,
+        "wait_for_valve_time": 300000,
+        "measurement_interval": 1800000,
+        "min_adc": 1200,
+        "max_adc": 3050,
+        "sample_count": 25,
+        "sample_interval": 5
+    },
+    "place3": {
+        "enabled": false,
+        "hum_threshold": 30,
+        "hum_target": 70,
+        "min_watering_time": 1000,
+        "max_watering_time": 10000,
+        "post_watering_delay": 600000,
+        "wait_for_valve_time": 300000,
+        "measurement_interval": 1800000,
+        "min_adc": 1200,
+        "max_adc": 3050,
+        "sample_count": 25,
+        "sample_interval": 5
+    }
+}
