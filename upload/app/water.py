@@ -27,26 +27,13 @@ class WateringController:
         self._hum = None
         self._temp = None
 
-        try:
-            self._mode                       = self._dconf.get("mode",                       required=True)#default = self.MODE_MANUAL)
-            self._max_valves                 = self._dconf.get("max_valves",                 required=True)#default = 1)
-            self._pwm_min                    = self._dconf.get("pwm_min",                    required=True)#default = 20)
-            self._pwm_max                    = self._dconf.get("pwm_max",                    required=True)#default = 80)
-            self._pump_cooldown_time         = self._dconf.get("pump_cooldown",           required=True)#default = 5000)
-            self._amb_temp_thresh            = self._dconf.get("amb_temp_thresh",            required=True)#default = 35)
-            self._dht_interval               = self._dconf.get("dht_interval",               required=True)#default = 3000
-            self._signal_check_interval      = self._dconf.get("signal_check_interval",   required=True)#default = 2000
-
-        except KeyError as e:
-            logger.critical(e)
-
-        if self._mode != self.MODE_AUTO and self._mode != self.MODE_MANUAL:
-            self._mode = self.MODE_MANUAL
+        if self.mode != self.MODE_AUTO and self.mode != self.MODE_MANUAL:
+            self.mode = self.MODE_MANUAL
             logger.error("Invalid mode set in the config for WateringController. Mode is set to MANUAL.")
 
-        self._timer_check_signals   = Neotimer(self._signal_check_interval)      # Interval to check watering signals from PlantPlace
-        self._timer_dht_measure     = Neotimer(self._dht_interval)               # Interval to measure from DHT11 sensor.
-        self._timer_pump_cooldown   = Neotimer(self._pump_cooldown_time)
+        self._timer_check_signals   = Neotimer(self.signal_check_interval)      # Interval to check watering signals from PlantPlace
+        self._timer_dht_measure     = Neotimer(self.dht_interval)               # Interval to measure from DHT11 sensor.
+        self._timer_pump_cooldown   = Neotimer(self.pump_cooldown_time)
         self._watering_timers = {}
 
         for p in self._places:
@@ -80,8 +67,43 @@ class WateringController:
     
     @property
     def current_mode(self):
-        return "AUTO" if self._mode == self.MODE_AUTO else "MANUAL"
+        return "AUTO" if self.mode == self.MODE_AUTO else "MANUAL"
 
+#endregion
+
+#region configuration properties-getters
+
+    @property
+    def mode(self):
+        return self._dconf.get('mode')
+
+    @property
+    def pwm_min(self):
+        return self._dconf.get('pwm_min')
+
+    @property
+    def pwm_max(self):
+        return self._dconf.get('pwm_max')
+
+    @property
+    def max_valves(self):
+        return self._dconf.get('max_valves')
+
+    @property
+    def pump_cooldown(self):
+        return self._dconf.get('pump_cooldown')
+
+    @property
+    def amb_temp_thresh(self):
+        return self._dconf.get('amb_temp_thresh')
+
+    @property
+    def dht_interval(self):
+        return self._dconf.get('dht_interval')
+
+    @property
+    def signal_check_interval(self):
+        return self._dconf.get('signal_check_interval')
 
 #endregion
 
@@ -94,28 +116,28 @@ class WateringController:
         self._update_modes()
         
     def switch_to_auto(self) -> bool:
-        if self._mode != self.MODE_MANUAL:
+        if self.mode != self.MODE_MANUAL:
             return False
-        self._mode = self.MODE_AUTO
+        self.mode = self.MODE_AUTO
         self._dconf.set("mode", value=self.MODE_AUTO)
         self._dconf.save()
         logger.info(f"WateringController switch mode to AUTO.")
         return True
         
     def switch_to_manual(self) -> bool:
-        if self._mode != self.MODE_AUTO:
+        if self.mode != self.MODE_AUTO:
             return False
-        self._mode = self.MODE_MANUAL
+        self.mode = self.MODE_MANUAL
         self._dconf.set("mode", value=self.MODE_MANUAL)
         self._dconf.save()
         logger.info(f"WateringController switch mode to MANUAL.")
         return True
 
     def switch_mode(self) -> bool:
-        if self._mode == self.MODE_AUTO:
+        if self.mode == self.MODE_AUTO:
             return self.switch_to_manual()
 
-        elif self._mode == self.MODE_MANUAL:
+        elif self.mode == self.MODE_MANUAL:
             return self.switch_to_auto()
 
     def is_fully_idle(self) -> bool:
@@ -137,7 +159,7 @@ class WateringController:
         return min(ip.remaining_idle_time for ip in idle_plants)
 
     def start_manual_watering(self, place: PlantPlace, duration):        
-        if self._mode == self.MODE_AUTO:
+        if self.mode == self.MODE_AUTO:
             logger.error("Cannot start manual watering in AUTO mode.")
             return False
 
@@ -177,10 +199,10 @@ class WateringController:
             self._do_watering(self._get_place(place_id))
 
     def _update_modes(self):
-        if self._mode == self.MODE_MANUAL:
+        if self.mode == self.MODE_MANUAL:
             self._manual_cycle()
         
-        if self._mode == self.MODE_AUTO:
+        if self.mode == self.MODE_AUTO:
             self._auto_cycle()
 
     def _manual_cycle(self):
@@ -213,7 +235,7 @@ class WateringController:
         if p.id in self._currently_watered:
             return False, "Place is currently watered."
         
-        if self._open_valves_count >= self._max_valves:
+        if self._open_valves_count >= self.max_valves:
             return False, "Max valves reached."
         
         return True, ""
@@ -223,8 +245,8 @@ class WateringController:
             remaining = self._timer_pump_cooldown.duration - self._timer_pump_cooldown.get_elapsed()
             return False, f"Pump is in cooldown ({remaining} ms remaining)"
         
-        if self._temp > self._amb_temp_thresh:
-            return False, f"Ambient temperature ({self._temp}) above threshold ({self._amb_temp_thresh})."
+        if self._temp > self.amb_temp_thresh:
+            return False, f"Ambient temperature ({self._temp}) above threshold ({self.amb_temp_thresh})."
 
         if self._water_sens.is_off():
           return False, "No water in the tank."
@@ -277,117 +299,13 @@ class WateringController:
                 self._timer_pump_cooldown.start()
 
         elif self._open_valves_count == 1:
-            pwm = self._pwm_max
+            pwm = self.pwm_max
 
         else:
-            pwm = int((self._pwm_max / self._places_count) * self._open_valves_count)
-            pwm = clamp(pwm, self._pwm_min, self._pwm_max)
+            pwm = int((self.pwm_max / self._places_count) * self._open_valves_count)
+            pwm = clamp(pwm, self.pwm_min, self.pwm_max)
 
         self._pump.on(pwm)
         logger.debug(f'Pump started with power = {pwm} %.')
-
-#endregion
-
-#region properties-setters and validators
-
-
-    @validate_integer_conv
-    def set_max_valves(self, value):
-        if value <= 0:
-            raise ValueError("Maksymalna liczba zaworów musi być większa od zera.")
-        self._max_valves_temp = value
-
-    @validate_integer_conv
-    def set_pwm_min(self, value):
-        if not (0 <= value <= 100):
-            raise ValueError("Minimalne PWM musi być w zakresie 0–100 %.")
-        self._pwm_min_temp = value
-
-    @validate_integer_conv
-    def set_pwm_max(self, value):
-        if not (0 <= value <= 100):
-            raise ValueError("Maksymalne PWM musi być w zakresie 0–100 %.")
-        self._pwm_max_temp = value
-
-    @validate_integer_conv
-    def set_pump_cooldown_time(self, value):
-        if value < 0:
-            raise ValueError("Cooldown pompy musi być nieujemny.")
-        self._pump_cooldown_time_temp = value
-
-    @validate_integer_conv
-    def set_amb_temp_thresh(self, value):
-        if value < -40:
-            raise ValueError("Próg temperatury otoczenia jest nieprawidłowy.")
-        self._amb_temp_thresh_temp = value
-
-    @validate_integer_conv
-    def set_dht_interval(self, value):
-        if value <= 0:
-            raise ValueError("Interwał pomiaru DHT musi być większy od zera.")
-        self._dht_interval_temp = value
-
-    @validate_integer_conv
-    def set_signal_check_interval(self, value):
-        if value <= 0:
-            raise ValueError("Interwał sprawdzania sygnałów musi być większy od zera.")
-        self._signal_check_interval_temp = value
-
-    def apply_setters(self):
-        if not self._mode == self.MODE_MANUAL:
-            raise ValueError("Zmiana konfiguracji podlewania jest możliwa tylko w trybie manualnym.")
-
-        # Create copy of parameters
-        max_valves               = getattr(self, "_max_valves_temp",               self._max_valves)
-        pwm_min                  = getattr(self, "_pwm_min_temp",                  self._pwm_min)
-        pwm_max                  = getattr(self, "_pwm_max_temp",                  self._pwm_max)
-        pump_cooldown_time       = getattr(self, "_pump_cooldown_time_temp",       self._pump_cooldown_time)
-        amb_temp_thresh          = getattr(self, "_amb_temp_thresh_temp",          self._amb_temp_thresh)
-        dht_interval             = getattr(self, "_dht_interval_temp",             self._dht_interval)
-        signal_check_interval    = getattr(self, "_signal_check_interval_temp",    self._signal_check_interval)
-
-        # Group validation
-        if pwm_min > pwm_max:
-            raise ValueError("Minimalne PWM nie może być większe od maksymalnego.")
-
-        # if mode not in (self.MODE_MANUAL, self.MODE_AUTO):
-        #     raise ValueError("Nieprawidłowy tryb pracy.")
-
-        if max_valves <= 0:
-            raise ValueError("Maksymalna liczba zaworów musi być większa od zera.")
-
-        # Apply changes (runtime)
-        self._max_valves               = max_valves
-        self._pwm_min                  = pwm_min
-        self._pwm_max                  = pwm_max
-        self._pump_cooldown_time       = pump_cooldown_time
-        self._amb_temp_thresh          = amb_temp_thresh
-        self._dht_interval             = dht_interval
-        self._signal_check_interval    = signal_check_interval
-
-        # Update timer durations
-        self._timer_check_signals.duration = signal_check_interval
-        self._timer_dht_measure.duration = dht_interval
-        self._timer_pump_cooldown.duration = pump_cooldown_time
-
-        # Apply changes in configuration
-        self._dconf.set("max_valves",              value=max_valves)
-        self._dconf.set("pwm_min",                 value=pwm_min)
-        self._dconf.set("pwm_max",                 value=pwm_max)
-        self._dconf.set("pump_cooldown",           value=pump_cooldown_time)
-        self._dconf.set("amb_temp_thresh",         value=amb_temp_thresh)
-        self._dconf.set("dht_interval",            value=dht_interval)
-        self._dconf.set("signal_check_interval",   value=signal_check_interval)
-        self._dconf.save()
-
-        # Remove temporary attributes
-        for attr in [
-            "_max_valves_temp", "_pwm_min_temp", "_pwm_max_temp",
-            "_pump_cooldown_time_temp", "_amb_temp_thresh_temp", "_dht_interval_temp",
-            "_signal_check_interval_temp"
-        ]:
-            if hasattr(self, attr):
-                delattr(self, attr)
-
 
 #endregion

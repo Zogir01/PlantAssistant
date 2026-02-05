@@ -58,32 +58,14 @@ class PlantPlace:
         self.on_measure_finished = None
         self.on_watering_finished = None
 
-        # User configuration
-        try:
-            enabled                          = self._dconf.get(id, "enabled",                required=True)#default = False)
-            self._hum_threshold              = self._dconf.get(id, "hum_threshold",          required=True)#default = 50)
-            self._hum_target                 = self._dconf.get(id, "hum_target",             required=True)#default = 80)
-            self._min_watering_time          = self._dconf.get(id, "min_watering_time",      required=True)#default = s_to_ms(1))
-            self._max_watering_time          = self._dconf.get(id, "max_watering_time",      required=True)#default = s_to_ms(5))
-            self._wait_for_valve_time        = self._dconf.get(id, "wait_for_valve_time",    required=True)#default = s_to_ms(2))
-            self._post_watering_delay        = self._dconf.get(id, "post_watering_delay",    required=True)#default = s_to_ms(1))
-            self._measurement_interval       = self._dconf.get(id, "measurement_interval",   required=True)#default = 10)
-            self._min_adc                    = self._dconf.get(id, "min_adc",                required=True)#default = 1200)
-            self._max_adc                    = self._dconf.get(id, "max_adc",                required=True)#default = 3000)
-            self._sample_count               = self._dconf.get(id, "sample_count",           required=True)#default = 5)
-            self._sample_interval            = self._dconf.get(id, "sample_interval",        required=True)#default = 5)
-
-        except KeyError as e:
-            logger.critical(e)
-
-        if enabled:
+        if self.enabled:
             logger.debug(f"[{self.id}] is enabled in configuration. Going to MEASURING state.")
             self._sm.set_initial_state(self.MEASURING)
         else:
             logger.debug(f"[{self.id}] is disabled in configuration. Going to DISABLED state.")
             self._sm.set_initial_state(self.DISABLED)
 
-        self._timer_sample = Neotimer(self._sample_interval)
+        self._timer_sample = Neotimer(self.sample_interval)
 
 #endregion
 
@@ -102,7 +84,7 @@ class PlantPlace:
         """ Returns how much time remains until the next measurement in miliseconds.
         If controller isn't in idle state, returns None. 
         """
-        return (self._measurement_interval - self._sm.state_elapsed_time()) \
+        return (self.measurement_interval - self._sm.state_elapsed_time()) \
             if self._sm.current_state == self.IDLE else None
 
     @property
@@ -145,6 +127,58 @@ class PlantPlace:
         """ Returns how much gain of humidity for 1 s of last watering. """
         return self._evaluated_watering_efficiency
     
+#endregion
+
+#region configuration properties-getters
+
+    @property
+    def enabled(self):
+        return self._dconf.get('enabled')
+
+    @property
+    def hum_threshold(self):
+        return self._dconf.get('hum_threshold')
+
+    @property
+    def hum_target(self):
+        return self._dconf.get('hum_target')
+
+    @property
+    def min_watering_time(self):
+        return self._dconf.get('min_watering_time')
+
+    @property
+    def max_watering_time(self):
+        return self._dconf.get('max_watering_time')
+
+    @property
+    def post_watering_delay(self):
+        return self._dconf.get('post_watering_delay')
+
+    @property
+    def wait_for_valve_time(self):
+        return self._dconf.get('wait_for_valve_time')
+
+    @property
+    def measurement_interval(self):
+        return self._dconf.get('measurement_interval')
+
+    @property
+    def min_adc(self):
+        return self._dconf.get('min_adc')
+
+    @property
+    def max_adc(self):
+        return self._dconf.get('max_adc')
+
+    @property
+    def sample_count(self):
+        return self._dconf.get('sample_count')
+
+    @property
+    def sample_interval(self):
+        return self._dconf.get('sample_interval')
+
 #endregion
 
 #region public methods
@@ -254,7 +288,7 @@ class PlantPlace:
 
     def _state_idle(self, event, phase):
         if phase == "do":
-            if self._state_elapsed_time() >= self._measurement_interval:
+            if self._state_elapsed_time() >= self.measurement_interval:
                 logger.debug(f"{self.id} measurement_interval elapsed. Changing state to STATE_MEASURING.")
                 self._sm.change_state(self.MEASURING)
 
@@ -276,7 +310,7 @@ class PlantPlace:
             self._last_raw = self._soil_sens.measure()
             self._samples.append(self._last_raw)
 
-            if len(self._samples) >= self._sample_count:
+            if len(self._samples) >= self.sample_count:
                 threshold = None
                 self._hum_previous = self._hum_percent
                 self._avg_raw = sum(self._samples) // len(self._samples) # znak '//' - dzielenie całkowitoliczbowe (floor devision)
@@ -291,26 +325,26 @@ class PlantPlace:
 
                 if self._sm._previous_state == self.IDLE or self._sm._previous_state == None:
                     # Last humidity value was stable, so we checking basic threshold
-                    threshold = self._hum_threshold
-                    self._desired_watering_time_ms = self._min_watering_time
+                    threshold = self.hum_threshold
+                    self._desired_watering_time_ms = self.min_watering_time
 
                 elif self._sm._previous_state in [self.POST_WATERING, self.PENDING_WATERING]:
-                    threshold = self._hum_target
+                    threshold = self.hum_target
 
                     if self._sm._previous_state == self.PENDING_WATERING and self._correction_add:
                         self._desired_watering_time_ms = self._desired_watering_time_ms - self._correction
                         self._correction_add = False
 
-                    elif self._sm._previous_state == self.PENDING_WATERING and self._desired_watering_time_ms == self._min_watering_time:
+                    elif self._sm._previous_state == self.PENDING_WATERING and self._desired_watering_time_ms == self.min_watering_time:
                         # Starting-point with lowest watering time.
                         pass
 
                     else:
-                        self._correction = (self._hum_target - self._hum_percent) * self._correction_factor
+                        self._correction = (self.hum_target - self._hum_percent) * self._correction_factor
                         self._desired_watering_time_ms = self._desired_watering_time_ms + self._correction
                         self._desired_watering_time_ms = clamp(self._desired_watering_time_ms, 
-                                                            self._min_watering_time, 
-                                                            self._max_watering_time)
+                                                            self.min_watering_time, 
+                                                            self.max_watering_time)
                         self._correction_add = True
                     
                     if self._sm._previous_state == self.POST_WATERING:
@@ -345,7 +379,7 @@ class PlantPlace:
             self._need_watering = False
             return
              
-        if self._state_elapsed_time() >= self._wait_for_valve_time:
+        if self._state_elapsed_time() >= self.wait_for_valve_time:
             logger.debug(f"[{self.id}] Valve opening timeout expired. Going to MEASURING.")
             self._sm.change_state(self.MEASURING)
 
@@ -366,7 +400,7 @@ class PlantPlace:
         if phase == "exit":
             return
         
-        if self._state_elapsed_time() >= self._post_watering_delay:
+        if self._state_elapsed_time() >= self.post_watering_delay:
             # Tu będzie obliczana efektywność podlania? 
             # Perform correction measure
             logger.debug(f"[{self.id}] Post watering delay elapsed. Going to MEASURING.")
@@ -381,141 +415,3 @@ class PlantPlace:
 
 #endregion
 
-#region properties-setters and validators
-
-    @validate_integer_conv
-    def set_hum_threshold(self, value):
-        if not (0 <= value <= 100):
-            raise ValueError("Próg wilgotności musi być w zakresie 0-100 %.")
-        self._hum_threshold_temp = value
-
-    @validate_integer_conv
-    def set_hum_target(self, value):
-        if not (0 <= value <= 100):
-            raise ValueError("Docelowa wilgotność musi być w zakresie 0-100 %.")
-        self._hum_target_temp = value
-
-    @validate_integer_conv
-    def set_min_watering_time(self, value):
-        if value < 0:
-            raise ValueError("Minimalny czas podlewania musi być nieujemny.")
-        self._min_watering_time_temp = value
-
-    @validate_integer_conv
-    def set_max_watering_time(self, value):
-        if value < 0:
-            raise ValueError("Maksymalny czas podlewania musi być nieujemny.")
-        self._max_watering_time_temp = value
-
-    @validate_integer_conv
-    def set_wait_for_valve_time(self, value):
-        if value < 0:
-            raise ValueError("Czas oczekiwania na zawór musi być nieujemny.")
-        self._wait_for_valve_time_temp = value
-
-    @validate_integer_conv
-    def set_post_watering_delay(self, value):
-        if value < 0:
-            raise ValueError("Opóźnienie po podlewaniu musi być nieujemne.")
-        self._post_watering_delay_temp = value
-
-    @validate_integer_conv
-    def set_measurement_interval(self, value):
-        if value <= 0:
-            raise ValueError("Interwał pomiaru musi być większy od zera.")
-        self._measurement_interval_temp = value
-
-    @validate_integer_conv
-    def set_min_adc(self, value):
-        if value < 0:
-            raise ValueError("Minimalny ADC musi być nieujemny.")
-        self._min_adc_temp = value
-
-    @validate_integer_conv
-    def set_max_adc(self, value):
-        if value < 0:
-            raise ValueError("Maksymalny ADC musi być nieujemny.")
-        self._max_adc_temp = value
-
-    @validate_integer_conv
-    def set_sample_count(self, value):
-        if value <= 0:
-            raise ValueError("Liczba próbek musi być większa od zera.")
-        self._sample_count_temp = value
-
-    @validate_integer_conv
-    def set_sample_interval(self, value):
-        if value <= 0:
-            raise ValueError("Interwał próbkowania musi być większy od zera.")
-        self._sample_interval_temp = value
-
-    def apply_setters(self):
-        if not self._sm.in_state(self.DISABLED):
-            raise ValueError("Zmiana konfiguracji jest możliwa tylko gdy miejsce podlewania jest bezczynne.")
-        
-        # Create copy of parameters
-        hum_threshold        = getattr(self, "_hum_threshold_temp",        self._hum_threshold)
-        hum_target           = getattr(self, "_hum_target_temp",           self._hum_target)
-        min_watering_time    = getattr(self, "_min_watering_time_temp",    self._min_watering_time)
-        max_watering_time    = getattr(self, "_max_watering_time_temp",    self._max_watering_time)
-        wait_for_valve_time  = getattr(self, "_wait_for_valve_time_temp",  self._wait_for_valve_time)
-        post_watering_delay  = getattr(self, "_post_watering_delay_temp",  self._post_watering_delay)
-        measurement_interval = getattr(self, "_measurement_interval_temp", self._measurement_interval)
-        min_adc              = getattr(self, "_min_adc_temp",              self._min_adc)
-        max_adc              = getattr(self, "_max_adc_temp",              self._max_adc)
-        sample_count         = getattr(self, "_sample_count_temp",         self._sample_count)
-        sample_interval      = getattr(self, "_sample_interval_temp",      self._sample_interval)
-
-        # Group validation
-        if hum_target <= hum_threshold:
-            raise ValueError("Docelowa wilgotność musi być większa niż próg wilgotności.")
-
-        if max_watering_time < min_watering_time:
-            raise ValueError("Maksymalny czas podlewania nie może być mniejszy od minimalnego.")
-
-        if max_adc < min_adc:
-            raise ValueError("Maksymalny ADC nie może być mniejszy od minimalnego.")
-
-        # Apply changes (runtime)
-        self._hum_threshold        = hum_threshold
-        self._hum_target           = hum_target
-        self._min_watering_time    = min_watering_time
-        self._max_watering_time    = max_watering_time
-        self._wait_for_valve_time  = wait_for_valve_time
-        self._post_watering_delay  = post_watering_delay
-        self._measurement_interval = measurement_interval
-        self._min_adc              = min_adc
-        self._max_adc              = max_adc
-        self._sample_count         = sample_count
-        self._sample_interval      = sample_interval
-
-        self._timer_sample.duration = sample_interval
-        self._soil_sens.min_adc = min_adc
-        self._soil_sens.max_adc = max_adc
-
-        # Apply changes in configuration
-        self._dconf.set(self.id, "hum_threshold",               value=hum_threshold)
-        self._dconf.set(self.id, "hum_target",                  value=hum_target)
-        self._dconf.set(self.id, "min_watering_time",           value=min_watering_time)
-        self._dconf.set(self.id, "max_watering_time",           value=max_watering_time)
-        self._dconf.set(self.id, "wait_for_valve_time",         value=wait_for_valve_time)
-        self._dconf.set(self.id, "post_watering_delay",         value=post_watering_delay)
-        self._dconf.set(self.id, "measurement_interval",        value=measurement_interval)
-        self._dconf.set(self.id, "min_adc",                     value=min_adc)
-        self._dconf.set(self.id, "max_adc",                     value=max_adc)
-        self._dconf.set(self.id, "sample_count",                value=sample_count)
-        self._dconf.set(self.id, "sample_interval",             value=sample_interval)
-        self._dconf.save()
-
-        # Remove temporary attributes
-        for attr in [
-            "_hum_threshold_temp", "_hum_target_temp",
-            "_min_watering_time_temp", "_max_watering_time_temp",
-            "_wait_for_valve_time_temp", "_post_watering_delay_temp",
-            "_measurement_interval_temp", "_min_adc_temp", "_max_adc_temp",
-            "_sample_count_temp", "_sample_interval_temp"
-        ]:
-            if hasattr(self, attr):
-                delattr(self, attr)
-
-#endregion

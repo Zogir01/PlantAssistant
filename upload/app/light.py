@@ -58,13 +58,18 @@ class LEDController:
 
         # User configuration
         self._dconf = ConfigManager().get_config("light")
-        try:
-            self.enabled = self._dconf.get("enabled", required=True)
-            self.threshold = self._dconf.get("threshold", required=True)
-            self.avg_count = self._dconf.get("avg_count", required=True)
 
-        except KeyError as e:
-            logger.critical(e)
+    @property
+    def enabled(self):
+        return self._dconf.get('enabled')
+
+    @property
+    def threshold(self):
+        return self._dconf.get('threshold')
+
+    @property
+    def avg_count(self):
+        return self._dconf.get('avg_count')
 
     def update(self):
         if not self.enabled:
@@ -120,44 +125,3 @@ class LEDController:
             self.turn_on()
         else:
             self.turn_off()
-
-#region properties-setters and validators
-
-    @validate_integer_conv
-    def set_enabled(self, value: bool):
-        self._enabled_temp = value
-
-    @validate_integer_conv
-    def set_threshold(self, value):
-        if not (0 <= value <= 100):
-            raise ValueError("Próg musi być w zakresie 0-100 %.")
-        self._threshold_temp = value
-
-    @validate_integer_conv
-    def set_avg_count(self, value):
-        if value <= 0:
-            raise ValueError("Liczba próbek musi być większa od zera.")
-        self._avg_count_temp = value
-
-    def apply_setters(self):
-        # Create copy of parameters
-        enabled = getattr(self, "_enabled_temp", self.enabled)
-        threshold = getattr(self, "_threshold_temp", self.threshold)
-        avg_count = getattr(self, "_avg_count_temp", self.avg_count)
-
-        # Group validation
-        # ...
-
-        # Apply changes
-        self.threshold = threshold
-        self.avg_count = avg_count
-        self.enabled = enabled
-
-        # Remove temporary attributes
-        for attr in ["_enabled_temp", "_threshold_temp", "_avg_count_temp"]:
-            if hasattr(self, attr):
-                delattr(self, attr)
-
-        self._dconf.save()
-
-#endregion

@@ -75,49 +75,49 @@ class DeviceAPI:
             return False, str(e) 
         
     def _update_place_config(self, place_id, v):
-        place = self._get_plant(place_id)
-        if "hum_threshold" in v:                place.set_hum_threshold             (int(v["hum_threshold"]))
-        if "hum_target" in v:                   place.set_hum_target                (int(v["hum_target"]))
-        if "min_watering_time" in v:            place.set_min_watering_time         (s_to_ms(int(v["min_watering_time"])))
-        if "max_watering_time" in v:            place.set_max_watering_time         (s_to_ms(int(v["max_watering_time"])))
-        if "wait_for_valve_time" in v:          place.set_wait_for_valve_time       (min_to_ms(int(v["wait_for_valve_time"])))
-        if "post_watering_delay" in v:          place.set_post_watering_delay       (min_to_ms(int(v["post_watering_delay"])))
-        if "measurement_interval" in v:         place.set_measurement_interval      (min_to_ms(int(v["measurement_interval"])))
-        if "min_adc" in v:                      place.set_min_adc                   (int(v["min_adc"]))
-        if "max_adc" in v:                      place.set_max_adc                   (int(v["max_adc"]))
-        if "sample_count" in v:                 place.set_sample_count              (int(v["sample_count"]))
-        if "sample_interval" in v:              place.set_sample_interval           (int(v["sample_interval"]))
-        place.apply_setters()
+        config = ConfigManager().get_config("places")
+        if "hum_threshold" in v:                config.set("hum_threshold",         value=int(v["hum_threshold"]))
+        if "hum_target" in v:                   config.set("hum_target",            value=int(v["hum_target"]))
+        if "min_watering_time" in v:            config.set("min_watering_time",     value=s_to_ms(int(v["min_watering_time"])))
+        if "max_watering_time" in v:            config.set("max_watering_time",     value=s_to_ms(int(v["max_watering_time"])))
+        if "wait_for_valve_time" in v:          config.set("wait_for_valve_time",   value=min_to_ms(int(v["wait_for_valve_time"])))
+        if "post_watering_delay" in v:          config.set("post_watering_delay",   value=min_to_ms(int(v["post_watering_delay"])))
+        if "measurement_interval" in v:         config.set("measurement_interval",  value=min_to_ms(int(v["measurement_interval"])))
+        if "min_adc" in v:                      config.set("min_adc",               value=int(v["min_adc"]))
+        if "max_adc" in v:                      config.set("max_adc",               value=int(v["max_adc"]))
+        if "sample_count" in v:                 config.set("sample_count",          value=int(v["sample_count"]))
+        if "sample_interval" in v:              config.set("sample_interval",       value=int(v["sample_interval"]))
+        config.save()
 
     def _update_watering_config(self, v):
-        ctrl = self._device.water_ctrl
-        if "max_valves" in v:                   ctrl.set_max_valves                 (int(v["max_valves"]))
-        if "pwm_min" in v:                      ctrl.set_pwm_min                    (int(v["pwm_min"]))
-        if "pwm_max" in v:                      ctrl.set_pwm_max                    (int(v["pwm_max"]))
-        if "pump_cooldown" in v:                ctrl.set_pump_cooldown_time         (min_to_ms(int(v["pump_cooldown"])))
-        if "amb_temp_thresh" in v:              ctrl.set_amb_temp_thresh            (int(v["amb_temp_thresh"]))
-        if "dht_interval_ms" in v:              ctrl.set_dht_interval               (min_to_ms(int(v["dht_interval"])))
-        if "signal_check_interval" in v:        ctrl.set_signal_check_interval      (int(v["signal_check_interval"]))
-        ctrl.apply_setters()
+        config = ConfigManager().get_config("water")
+        if "max_valves" in v:                   config.set("max_valves",            value=int(v["max_valves"]))
+        if "pwm_min" in v:                      config.set("pwm_min",               value=int(v["pwm_min"]))
+        if "pwm_max" in v:                      config.set("pwm_max",               value=int(v["pwm_max"]))
+        if "pump_cooldown" in v:                config.set("pump_cooldown",         value=min_to_ms(int(v["pump_cooldown"])))
+        if "amb_temp_thresh" in v:              config.set("amb_temp_thresh",       value=int(v["amb_temp_thresh"]))
+        if "dht_interval" in v:                 config.set("dht_interval",       value=min_to_ms(int(v["dht_interval"])))
+        if "signal_check_interval" in v:        config.set("signal_check_interval", value=int(v["signal_check_interval"]))
+        config.save()
 
     def _update_device_config(self, v):
-        ctrl = self._device
-        if "enable_telemetry" in v:             ctrl.set_enable_telemetry           (True if v["enable_telemetry"] == "true" else False)
-        if "telemetry_interval_ms" in v:        ctrl.set_telemetry_interval         (int(v["telemetry_interval"]))
-        if "enable_energy_save_mode" in v:      ctrl.set_enable_energy_save_mode    (True if v["enable_energy_save_mode"] == "true" else False)
-        if "min_dsleep_time_ms" in v:           ctrl.set_min_dsleep_time            (min_to_ms(int(v["min_dsleep_time"])))
-        if "enable_work_schedule" in v:         ctrl.set_enable_work_schedule       (True if v["enable_work_schedule"] == "true" else False)
-        if "work_schedule_from" in v:           ctrl.set_work_schedule_from         (v["work_schedule_from"])
-        if "work_schedule_to" in v:             ctrl.set_work_schedule_to           (v["work_schedule_to"])
-        if "schedule_interval_ms" in v:         ctrl.set_schedule_interval          (int(v["schedule_interval"]))
-        ctrl.apply_setters()
+        config = ConfigManager().get_config("device")
+        if "enable_telemetry" in v:             config.set("enable_telemetry",      value=True if v["enable_telemetry"] == "true" else False)
+        if "telemetry_interval" in v:           config.set("telemetry_interval", value=int(v["telemetry_interval"]))
+        if "enable_energy_save_mode" in v:      config.set("enable_energy_save_mode", value=True if v["enable_energy_save_mode"] == "true" else False)
+        if "min_dsleep_time" in v:              config.set("min_dsleep_time",    value=min_to_ms(int(v["min_dsleep_time"])))
+        if "enable_work_schedule" in v:         config.set("enable_work_schedule",  value=True if v["enable_work_schedule"] == "true" else False)
+        if "work_schedule_from" in v:           config.set("work_schedule_from",    value=v["work_schedule_from"])
+        if "work_schedule_to" in v:             config.set("work_schedule_to",      value=v["work_schedule_to"])
+        if "schedule_interval" in v:            config.set("schedule_interval",  value=int(v["schedule_interval"]))
+        config.save()
 
     def _update_light_config(self, v):
-        ctrl = self._device.led_ctrl
-        if "enabled" in v:                      ctrl.set_enabled                    ((True if v["enabled"] == "true" else False))
-        if "threshold" in v:                    ctrl.set_threshold                  (int(v["threshold"]))
-        if "avg_count" in v:                    ctrl.set_avg_count                  (int(v["avg_count"]))
-        ctrl.apply_setters()
+        config = ConfigManager().get_config("light")
+        if "enabled" in v:                      config.set("enabled",               value=(True if v["enabled"] == "true" else False))
+        if "threshold" in v:                    config.set("threshold",             value=int(v["threshold"]))
+        if "avg_count" in v:                    config.set("avg_count",             value=int(v["avg_count"]))
+        config.save()
 
     def get_config(self):
         """ HTTP API method. Return all device config from .json files. """
@@ -199,9 +199,9 @@ class DeviceAPI:
             "current_mode"      : wc.current_mode
         }
         status["device"] = {
-            "schedule_active"   : d._enable_work_schedule,
-            "telemetry_active"  : d._enable_telemetry,
-            "energy_save_active": d._enable_energy_save_mode
+            "schedule_active"   : d.enable_work_schedule,
+            "telemetry_active"  : d.enable_telemetry,
+            "energy_save_active": d.enable_energy_save_mode
         }
 
         return status
